@@ -1,0 +1,16 @@
+# Node
+node_modules
+npm-debug.log
+
+# Docker
+jenkins_home/
+*.env
+docker-compose.override.yml
+
+# OS
+.DS_Store
+
+# Build
+.next/
+dist/
+build/

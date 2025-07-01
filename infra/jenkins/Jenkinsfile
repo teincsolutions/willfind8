@@ -1,0 +1,70 @@
+pipeline {
+  agent any
+
+  environment {
+    COMPOSE_FILE = "infra/docker-compose.yml"
+    COMPOSE_ENV = "infra/.env"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/teincsolutions/willfind8-fullstack.git'
+      }
+    }
+
+    stage('Inject Secrets') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'pg-user', variable: 'POSTGRES_USER'),
+          string(credentialsId: 'pg-pass', variable: 'POSTGRES_PASSWORD'),
+          string(credentialsId: 'pgadmin-email', variable: 'PGADMIN_DEFAULT_EMAIL'),
+          string(credentialsId: 'pgadmin-pass', variable: 'PGADMIN_DEFAULT_PASSWORD'),
+          string(credentialsId: 'minio-user', variable: 'MINIO_ROOT_USER'),
+          string(credentialsId: 'minio-pass', variable: 'MINIO_ROOT_PASSWORD')
+        ]) {
+          // Create dynamic env file for Docker Compose
+          sh '''
+            cat infra/.env > jenkins.env
+            echo "POSTGRES_USER=$POSTGRES_USER" >> jenkins.env
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> jenkins.env
+            echo "PGADMIN_DEFAULT_EMAIL=$PGADMIN_DEFAULT_EMAIL" >> jenkins.env
+            echo "PGADMIN_DEFAULT_PASSWORD=$PGADMIN_DEFAULT_PASSWORD" >> jenkins.env
+            echo "MINIO_ROOT_USER=$MINIO_ROOT_USER" >> jenkins.env
+            echo "MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD" >> jenkins.env
+          '''
+        }
+      }
+    }
+
+    stage('Lint & Test') {
+      steps {
+        sh 'cd apps/api-server && npm install && npm run lint && npm test'
+      }
+    }
+
+    stage('Build Images') {
+      steps {
+        sh 'docker compose --env-file jenkins.env -f $COMPOSE_FILE build'
+      }
+    }
+
+    stage('Run DB Migrations') {
+      steps {
+        sh 'docker compose --env-file jenkins.env -f $COMPOSE_FILE run --rm flyway'
+      }
+    }
+
+    stage('Deploy Services') {
+      steps {
+        sh 'docker compose --env-file jenkins.env -f $COMPOSE_FILE up -d'
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'rm -f jenkins.env'
+    }
+  }
+}
