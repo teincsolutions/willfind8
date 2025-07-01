@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/teincsolutions/willfind8-fullstack.git'
+        git branch: 'main', url: 'https://github.com/teincsolutions/willfind8.git'
       }
     }
 
