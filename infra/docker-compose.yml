@@ -57,6 +57,9 @@ services:
       -user=${POSTGRES_USER}
       -password=${POSTGRES_PASSWORD}
       migrate
+    environment:
+      FLYWAY_USER: ${POSTGRES_USER}
+      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       - postgres
     networks:
