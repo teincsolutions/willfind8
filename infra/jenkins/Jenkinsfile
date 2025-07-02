@@ -3,10 +3,6 @@ pipeline {
     label 'docker'
   }
 
-  environment {
-   
-  }
-
   stages {
     stage('Checkout') {
       steps {
