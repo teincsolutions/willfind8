@@ -49,7 +49,6 @@ services:
   flyway:
     image: flyway/flyway:latest
     container_name: flyway
-    restart: unless-stopped
     volumes:
       - ./migrations:/flyway/sql
     command:
