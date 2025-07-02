@@ -39,7 +39,7 @@ pipeline {
 
     stage('Build Web') {
       steps {
-        dir('user-web') {
+        dir('apps/user-web') {
           sh 'npm install'
           sh 'npm run build'
         }
@@ -48,7 +48,7 @@ pipeline {
 
     stage('Build API') {
       steps {
-        dir('api-server') {
+        dir('apps/api-server') {
           sh 'npm install'
           sh 'npm run build'
         }
