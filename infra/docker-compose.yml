@@ -51,12 +51,9 @@ services:
     container_name: flyway
     volumes:
       - ./migrations:/flyway/sql
-    command:
-      -url=jdbc:postgresql://postgres:5432/postgres
-      -user=${POSTGRES_USER}
-      -password=${POSTGRES_PASSWORD}
-      migrate
+    command: migrate
     environment:
+      FLYWAY_URL: ${FLYWAY_URL}
       FLYWAY_USER: ${POSTGRES_USER}
       FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
