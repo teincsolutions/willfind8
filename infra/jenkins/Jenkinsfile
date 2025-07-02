@@ -54,7 +54,7 @@ pipeline {
     stage('Deploy Services') {
       steps {
         dir('infra') {
-          sh 'docker compose --env-file ../jenkins.env up -d --build'
+          sh 'docker compose --env-file ../jenkins.env up -d'
         }
       }
     }
