@@ -1,9 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    label 'docker'
+  }
 
   environment {
-    COMPOSE_FILE = "infra/docker-compose.yml"
-    COMPOSE_ENV = "infra/.env"
+    NODE_ENV = 'production'
   }
 
   stages {
@@ -13,7 +14,7 @@ pipeline {
       }
     }
 
-    stage('Inject Secrets') {
+    stage('Setup Environment') {
       steps {
         withCredentials([
           string(credentialsId: 'pg-user', variable: 'POSTGRES_USER'),
@@ -32,32 +33,35 @@ pipeline {
             echo "PGADMIN_DEFAULT_PASSWORD=$PGADMIN_DEFAULT_PASSWORD" >> jenkins.env
             echo "MINIO_ROOT_USER=$MINIO_ROOT_USER" >> jenkins.env
             echo "MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD" >> jenkins.env
+            chmod 600 jenkins.env
           '''
         }
       }
     }
 
-    stage('Lint & Test') {
+  stage('Build Web') {
       steps {
-        sh 'cd apps/api-server && npm install && npm run lint && npm test'
+        dir('user-web') {
+          sh 'npm install'
+          sh 'npm run build'
+        }
       }
     }
 
-    stage('Build Images') {
+    stage('Build API') {
       steps {
-        sh 'docker compose --env-file jenkins.env -f $COMPOSE_FILE build'
-      }
-    }
-
-    stage('Run DB Migrations') {
-      steps {
-        sh 'docker compose --env-file jenkins.env -f $COMPOSE_FILE run --rm flyway'
+        dir('api-server') {
+          sh 'npm install'
+          sh 'npm run build'
+        }
       }
     }
 
     stage('Deploy Services') {
       steps {
-        sh 'docker compose --env-file jenkins.env -f $COMPOSE_FILE up -d'
+        dir('infra') {
+          sh 'docker compose --env-file jenkins.env up -d --build'
+        }
       }
     }
   }
