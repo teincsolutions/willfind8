@@ -14,7 +14,7 @@ pipeline {
       }
     }
 
-    stage('Setup Environment') {
+    stage('Create Docker .env from Jenkins Credentials') {
       steps {
         withCredentials([
           string(credentialsId: 'pg-user', variable: 'POSTGRES_USER'),
@@ -24,10 +24,8 @@ pipeline {
           string(credentialsId: 'minio-user', variable: 'MINIO_ROOT_USER'),
           string(credentialsId: 'minio-pass', variable: 'MINIO_ROOT_PASSWORD')
         ]) {
-          // Create dynamic env file for Docker Compose
           sh '''
-            cat infra/.env > jenkins.env
-            echo "POSTGRES_USER=$POSTGRES_USER" >> jenkins.env
+            echo "POSTGRES_USER=$POSTGRES_USER" > jenkins.env
             echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> jenkins.env
             echo "PGADMIN_DEFAULT_EMAIL=$PGADMIN_DEFAULT_EMAIL" >> jenkins.env
             echo "PGADMIN_DEFAULT_PASSWORD=$PGADMIN_DEFAULT_PASSWORD" >> jenkins.env
@@ -39,7 +37,7 @@ pipeline {
       }
     }
 
-  stage('Build Web') {
+    stage('Build Web') {
       steps {
         dir('user-web') {
           sh 'npm install'
@@ -60,7 +58,7 @@ pipeline {
     stage('Deploy Services') {
       steps {
         dir('infra') {
-          sh 'docker compose --env-file jenkins.env up -d --build'
+          sh 'docker compose --env-file ../jenkins.env up -d --build'
         }
       }
     }
